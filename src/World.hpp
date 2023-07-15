@@ -10,7 +10,7 @@ namespace psim {
 class World {
 // class variables
 public:
-    static constexpr int MAX_PARTICLES = 1024;
+    static constexpr int MAX_PARTICLES = 4096;
 
 private:
     int fps;
@@ -65,11 +65,31 @@ private:
 
     // sub-stepped updating of every particle
     void update_physics_sub(const double dt) {
+        // collision with partition
+        
+        for (auto p : particles)
+            partition.add_particle(p);
+        
         // collision
-        for (auto p1: particles)
+        for (int row=partition.row0; row<=partition.row1; row++) {
+            for (int col=partition.col0; col<=partition.col1; col++) {
+                std::vector<Particle*> partitioned = partition.relevant_particles(row, col);
+                for (auto p1: partitioned)
+                    for (auto p2: partitioned)
+                        if (p1 != p2)
+                            p1->resolve_collision(*p2);
+            }
+        }
+
+        partition.reset();
+        
+       /*
+       for (auto p1: particles)
             for (auto p2: particles)
                 if (p1 != p2)
                     p1->resolve_collision(*p2);
+        */
+
         // fix into world
         for (auto p : particles)
             p->contain(width, height);
