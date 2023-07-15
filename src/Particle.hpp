@@ -1,3 +1,4 @@
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <math.h>
 #include <cassert>
@@ -8,7 +9,8 @@ namespace psim {
 class Particle {
 // class variables
 public:
-    static constexpr double MAX_RADIUS = 32;
+    static constexpr double MIN_RADIUS = 5;
+    static constexpr double MAX_RADIUS = 40;
     struct Property {
         double radius;      // (0, MAX_RADIUS]
         double mass;        // (0, inf)
@@ -35,6 +37,7 @@ public:
              const sf::Vector2<double> pos_i_in,
              const sf::Vector2<double> acc_in
     ):  prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in) {
+        assert((prop_in.radius >= MIN_RADIUS));
         assert((prop_in.radius <= MAX_RADIUS));
         sprite.setRadius(prop_in.radius);
         sprite.setOrigin(prop_in.radius, prop_in.radius);
@@ -79,7 +82,7 @@ public:
     }
 
 
-    // ensure the particle stays in the world
+    // ensures the particle stays in the world
     void contain(const int width, const int height) {
         // left
         if (pos.x - prop.radius < 0)
@@ -93,6 +96,12 @@ public:
         // bottom
         if (pos.y + prop.radius > height)
             pos.y = height - prop.radius;
+    }
+
+
+    // returns position
+    sf::Vector2<double> get_pos() const {
+        return pos;
     }
 };  // Particle
 }   // namespace psim

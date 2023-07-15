@@ -1,4 +1,6 @@
+#pragma once
 #include "Particle.hpp"
+#include "Partition.hpp"
 #include <SFML/Graphics.hpp>
 #include <vector>
 
@@ -13,8 +15,9 @@ public:
 private:
     int fps;
     int width, height;
-    int sub_steps;
+    int substeps;
     std::vector<psim::Particle*> particles;
+    Partition partition;
 
 
 
@@ -23,7 +26,14 @@ public:
     // constructor
     World(const int width_in, const int height_in,
           const int fps_in, const int sub_steps_in
-    ):  width(width_in), height(height_in), fps(fps_in), sub_steps(sub_steps_in) {}
+    ):  width(width_in), height(height_in), fps(fps_in), substeps(sub_steps_in), partition(width_in, height_in) {}
+
+
+    // destructor
+    ~World() {
+        for (auto p : particles)
+            delete p;
+    }
 
 
     // updates both physics and render
@@ -33,22 +43,22 @@ public:
     }
 
 
-    // adds an object
-    void add_particle(const psim::Particle::Property props,
+    // adds a particle
+    void add_particle(const Particle::Property props,
                       const sf::Color color,
                       const sf::Vector2<double> pos,
                       const sf::Vector2<double> vel,
                       const sf::Vector2<double> acc) {
         sf::Vector2<double> pos_i = pos - vel*(1.0/fps);
-        particles.push_back(new psim::Particle(props, color, pos, pos_i, acc));
+        particles.push_back(new Particle(props, color, pos, pos_i, acc));
     }
 
 
 private:
     // update phyics of every particle
     void update_physics(const double dt) {
-        double dt_sub = dt / sub_steps;
-        for (int i=0; i<sub_steps; i++)
+        double dt_sub = dt / substeps;
+        for (int i=0; i<substeps; i++)
             update_physics_sub(dt_sub);
     }
 
