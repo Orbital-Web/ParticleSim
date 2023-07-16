@@ -11,7 +11,7 @@ namespace psim {
 class World {
 // class variables
 public:
-    static constexpr int MAX_PARTICLES = 4096;
+    static constexpr int MAX_PARTICLES = 256;
 
 private:
     int fps;
@@ -67,11 +67,32 @@ private:
 
     // sub-stepped updating of every particle
     void update_physics_sub(const double dt) {
+        /*
         // collision
         for (auto p1 : particles)
             for (auto p2 : particles)
                 if (p1 != p2)
                     p1->resolve_collision(*p2);
+        */
+        // initialize partition
+        partition.reset();
+        for (auto p : particles)
+           partition.add_particle(p);
+        
+        // collision with partition in two passes (even & odd rows)
+        for (int pass=0; pass<=1; pass++) {
+            for (int r=pass; r<partition.n_rows; r+=2) {
+                pool.push_task([r, this] {
+                for (int c=0; c<this->partition.n_cols; c++)
+                    for (auto p1 : this->partition.get(r, c))
+                        for (auto p2 : this->partition.get(r, c))
+                            if (p1 != p2)
+                                p1->resolve_collision(*p2);
+                });
+            }
+            pool.wait_for_tasks();
+        }
+
 
         // fix into world and apply motion
         for (auto p : particles)

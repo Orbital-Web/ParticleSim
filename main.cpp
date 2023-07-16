@@ -4,8 +4,8 @@
 
 
 int main() {
-    const int width = 1000;
-    const int height = 1000;
+    const int width = 900;
+    const int height = 900;
     const int fps = 30;
     const int substeps = 8;
 
@@ -27,7 +27,7 @@ int main() {
 
         if (n_particles < psim::World::MAX_PARTICLES) {
             float s = float(n_particles % psim::World::MAX_PARTICLES) / psim::World::MAX_PARTICLES;
-            world.add_particle({6, 10*s+5, 0.5*s+0.5},
+            world.add_particle({15-std::pow(6*s-3,2), 10*s+5, 0.5*s+0.5},
                 {
                     sf::Uint8(7.6*(1.05-s)*pow(s,3)*255),
                     sf::Uint8(15*pow(1.0-s,2)*pow(s,2)*255),

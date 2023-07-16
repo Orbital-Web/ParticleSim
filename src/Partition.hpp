@@ -29,10 +29,15 @@ public:
 
     // adds a particle
     void add_particle(Particle* particle) {
-        sf::Vector2<double> pos = particle->get_pos();
-        int row = pos.y / cellsize;
-        int col = pos.x / cellsize;
-        pgrid[n_rows*row + col].push_back(particle);
+        Particle::Bbox bbox = particle->get_bbox();
+        int r0 = bbox.ul.y / cellsize;
+        int c0 = bbox.ul.x / cellsize;
+        int r1 = bbox.br.y / cellsize;
+        int c1 = bbox.br.x / cellsize;
+        for (int r=r0; r<=r1; r++)
+            for (int c=c0; c<=c1; c++)
+                if (r!=n_rows && c!=n_cols)
+                    pgrid[n_rows*r + c].push_back(particle);
     }
 
 
