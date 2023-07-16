@@ -27,17 +27,12 @@ public:
     }
 
 
-    // adds a particle
+    // adds a particle to the correct cell
     void add_particle(Particle* particle) {
-        Particle::Bbox bbox = particle->get_bbox();
-        int r0 = bbox.ul.y / cellsize;
-        int c0 = bbox.ul.x / cellsize;
-        int r1 = bbox.br.y / cellsize;
-        int c1 = bbox.br.x / cellsize;
-        for (int r=r0; r<=r1; r++)
-            for (int c=c0; c<=c1; c++)
-                if (r!=n_rows && c!=n_cols)
-                    pgrid[n_rows*r + c].push_back(particle);
+        auto pos = particle->get_pos();
+        int r = pos.y / cellsize;
+        int c = pos.x / cellsize;
+        pgrid[n_rows*r + c].push_back(particle);
     }
 
 
@@ -52,6 +47,7 @@ public:
         pgrid.clear();
         pgrid.resize(n_rows*n_cols);
     }
+
 
     // prints number of particles in each cell for debugging
     void print() {

@@ -4,10 +4,10 @@
 
 
 int main() {
-    const int width = 900;
-    const int height = 900;
+    const int width = 800;
+    const int height = 800;
     const int fps = 30;
-    const int substeps = 8;
+    const int substeps = 6;
 
     // setup
     sf::RenderWindow window(sf::VideoMode(width, height), "Particule Simulation");
@@ -26,14 +26,15 @@ int main() {
         }
 
         if (n_particles < psim::World::MAX_PARTICLES) {
-            float s = float(n_particles % psim::World::MAX_PARTICLES) / psim::World::MAX_PARTICLES;
-            world.add_particle({15-std::pow(6*s-3,2), 10*s+5, 0.5*s+0.5},
+            float s = 4*float(n_particles % psim::World::MAX_PARTICLES) / psim::World::MAX_PARTICLES;
+            s = s - (int)s;
+            world.add_particle({float(10-std::pow(6*s-3,2)), 10*s+5, float(0.5*s+0.5)},
                 {
                     sf::Uint8(7.6*(1.05-s)*pow(s,3)*255),
                     sf::Uint8(15*pow(1.0-s,2)*pow(s,2)*255),
                     sf::Uint8(7.5*pow(1.0-s,3)*(s+0.05)*255)
                 },
-                {50,50}, {30,0}, {0,1000}
+                {50,50}, {50,50}, {0,1000}
             );
             n_particles++;
         }

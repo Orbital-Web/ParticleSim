@@ -9,15 +9,11 @@ namespace psim {
 class Particle {
 // class variables
 public:
-    static constexpr double MAX_RADIUS = 30;
+    static constexpr float MAX_RADIUS = 40;
     struct Property {
-        double radius;      // (0, MAX_RADIUS]
-        double mass;        // (0, inf)
-        double restitution; // (0, 1]
-    };
-    struct Bbox {
-        sf::Vector2<double> ul; // upper-left corner
-        sf::Vector2<double> br; // bottom-right corner
+        float radius;      // (0, MAX_RADIUS]
+        float mass;        // (0, inf)
+        float restitution; // (0, 1]
     };
 
 private:
@@ -27,7 +23,7 @@ private:
 
     // physical
     Property prop; 
-    sf::Vector2<double> pos, pos_i, acc;
+    sf::Vector2f pos, pos_i, acc;
 
 
 
@@ -36,9 +32,9 @@ public:
     // constructor
     Particle(const Property prop_in,
              const sf::Color color_in,
-             const sf::Vector2<double> pos_in,
-             const sf::Vector2<double> pos_i_in,
-             const sf::Vector2<double> acc_in
+             const sf::Vector2f pos_in,
+             const sf::Vector2f pos_i_in,
+             const sf::Vector2f acc_in
     ):  prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in) {
         assert((prop_in.radius <= MAX_RADIUS));
         sprite.setRadius(prop_in.radius);
@@ -55,10 +51,10 @@ public:
 
 
     // updates the position of the particle
-    void update_physics(const double dt, const int width, const int height) {
-        sf::Vector2<double> pos_old = pos;
+    void update_physics(const float dt, const int width, const int height) {
+        sf::Vector2f pos_old = pos;
         // x(n+1) = 2x(n) - x(n-1) + a*t^2
-        pos = 2.0*pos - pos_i + acc*dt*dt;
+        pos = float(2)*pos - pos_i + acc*dt*dt;
         pos_i = pos_old;
         contain(width, height);
     }
@@ -66,36 +62,27 @@ public:
 
     // updates positions so two this and other are no longer in collision
     void resolve_collision(Particle& other) {
-        sf::Vector2<double> dir = other.pos - pos;
-        double d_sq = dir.x*dir.x + dir.y*dir.y;
-        double sum_r = prop.radius + other.prop.radius;
+        sf::Vector2f dir = other.pos - pos;
+        float d_sq = dir.x*dir.x + dir.y*dir.y;
+        float sum_r = prop.radius + other.prop.radius;
 
         // objects in collision
         if (sum_r*sum_r > d_sq) {
-            double d = sqrt(d_sq);
-            sf::Vector2<double> ndir = dir / d;
-            double sum_m = prop.mass + other.prop.mass;
-            double d_adjust = 0.5 * prop.restitution * other.prop.restitution * (sum_r - d);
+            float d = sqrt(d_sq);
+            float sum_m = prop.mass + other.prop.mass;
+            sf::Vector2f ndir = dir / (d * sum_m);
+            float d_adjust = 0.5 * prop.restitution * other.prop.restitution * (sum_r - d);
 
             // apply collision
-            pos -= ndir * (prop.mass / sum_m) * d_adjust;
-            other.pos += ndir * (other.prop.mass / sum_m) * d_adjust;
+            pos -= ndir * prop.mass * d_adjust;
+            other.pos += ndir * other.prop.mass * d_adjust;
         }
     }
 
 
     // returns position
-    sf::Vector2<double> get_pos() const {
+    sf::Vector2f get_pos() const {
         return pos;
-    }
-
-
-    // returns bounding box of the particle
-    Bbox get_bbox() const {
-        return {
-            {pos.x - prop.radius, pos.y - prop.radius},
-            {pos.x + prop.radius, pos.y + prop.radius}
-        };
     }
 
 private:
