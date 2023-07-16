@@ -28,13 +28,13 @@ int main() {
         if (n_particles < psim::World::MAX_PARTICLES) {
             float s = 4*float(n_particles % psim::World::MAX_PARTICLES) / psim::World::MAX_PARTICLES;
             s = s - (int)s;
-            world.add_particle({float(10-std::pow(6*s-3,2)), 10*s+5, float(0.5*s+0.5)},
+            world.add_particle({float(12-std::pow(6*s-3,2)), 25-20*s, float(0.5*s+0.5)},
                 {
                     sf::Uint8(7.6*(1.05-s)*pow(s,3)*255),
                     sf::Uint8(15*pow(1.0-s,2)*pow(s,2)*255),
                     sf::Uint8(7.5*pow(1.0-s,3)*(s+0.05)*255)
                 },
-                {50,50}, {50,50}, {0,1000}
+                {50,50}, {120,0}, {0,1000}
             );
             n_particles++;
         }

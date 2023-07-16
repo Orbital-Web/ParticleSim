@@ -9,7 +9,7 @@ namespace psim {
 class Particle {
 // class variables
 public:
-    static constexpr float MAX_RADIUS = 40;
+    static constexpr float MAX_RADIUS = 12;
     struct Property {
         float radius;      // (0, MAX_RADIUS]
         float mass;        // (0, inf)
@@ -74,8 +74,8 @@ public:
             float d_adjust = 0.5 * prop.restitution * other.prop.restitution * (sum_r - d);
 
             // apply collision
-            pos -= ndir * prop.mass * d_adjust;
-            other.pos += ndir * other.prop.mass * d_adjust;
+            pos -= ndir * other.prop.mass * d_adjust;
+            other.pos += ndir * prop.mass * d_adjust;
         }
     }
 
