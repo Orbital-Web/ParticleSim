@@ -53,12 +53,12 @@ public:
 
 
     // updates the position of the particle
-    void update_physics(const double dt) {
+    void update_physics(const double dt, const int width, const int height) {
         sf::Vector2<double> pos_old = pos;
-
         // x(n+1) = 2x(n) - x(n-1) + a*t^2
         pos = 2.0*pos - pos_i + acc*dt*dt;
         pos_i = pos_old;
+        contain(width, height);
     }
 
 
@@ -82,6 +82,12 @@ public:
     }
 
 
+    // returns position
+    sf::Vector2<double> get_pos() const {
+        return pos;
+    }
+
+private:
     // ensures the particle stays in the world
     void contain(const int width, const int height) {
         // left
@@ -96,12 +102,6 @@ public:
         // bottom
         if (pos.y + prop.radius > height)
             pos.y = height - prop.radius;
-    }
-
-
-    // returns position
-    sf::Vector2<double> get_pos() const {
-        return pos;
     }
 };  // Particle
 }   // namespace psim

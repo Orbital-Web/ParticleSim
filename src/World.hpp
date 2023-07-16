@@ -1,6 +1,7 @@
 #pragma once
 #include "Particle.hpp"
 #include "Partition.hpp"
+#include "BS_thread_pool_light.hpp"
 #include <SFML/Graphics.hpp>
 #include <vector>
 
@@ -18,6 +19,7 @@ private:
     int substeps;
     std::vector<psim::Particle*> particles;
     Partition partition;
+    BS::thread_pool_light pool;
 
 
 
@@ -65,37 +67,16 @@ private:
 
     // sub-stepped updating of every particle
     void update_physics_sub(const double dt) {
-        // collision with partition
-        
-        for (auto p : particles)
-            partition.add_particle(p);
-        
         // collision
-        for (int row=partition.row0; row<=partition.row1; row++) {
-            for (int col=partition.col0; col<=partition.col1; col++) {
-                std::vector<Particle*> partitioned = partition.relevant_particles(row, col);
-                for (auto p1: partitioned)
-                    for (auto p2: partitioned)
-                        if (p1 != p2)
-                            p1->resolve_collision(*p2);
-            }
-        }
-
-        partition.reset();
-        
-       /*
-       for (auto p1: particles)
-            for (auto p2: particles)
+        for (auto p1 : particles)
+            for (auto p2 : particles)
                 if (p1 != p2)
                     p1->resolve_collision(*p2);
-        */
 
-        // fix into world
+        // fix into world and apply motion
         for (auto p : particles)
-            p->contain(width, height);
-        // update
-        for (auto p : particles)
-            p->update_physics(dt);
+            pool.push_task([p, this, dt] {p->update_physics(dt, this->width, this->height);});
+        pool.wait_for_tasks();
     }
 
 

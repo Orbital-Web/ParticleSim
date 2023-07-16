@@ -1,5 +1,5 @@
 # Particle Simulator
-A Particle Simulator written in C++ and [SFML](https://www.sfml-dev.org/).
+A Particle Simulator written in C++ and [SFML](https://www.sfml-dev.org/), and [Thread Pools](https://github.com/bshoshany/thread-pool).
 
 
 ## Features
