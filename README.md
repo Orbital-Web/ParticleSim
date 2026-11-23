@@ -47,3 +47,15 @@ The space partitioning and threading is still incomplete as it is still pretty i
       -Wl,-rpath,SFML-2.6.0/build/lib
     ./main
     ```
+    cd SFML-2.6.0 && mkdir -p build && cd build
+    cmake .. -DSFML_STATIC_LIBRARIES=TRUE -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_FLAGS="-Wno-unused-command-line-argument" \
+      -DCMAKE_CXX_FLAGS="-Wno-unused-command-line-argument" \
+      -DCMAKE_OBJC_FLAGS="-Wno-unused-command-line-argument"
+    make -j$(sysctl -n hw.ncpu)
+    cd ../..
+    g++ -std=c++17 -c main.cpp -ISFML-2.6.0/include -DSFML_STATIC
+    g++ -o main main.o -ISFML-2.6.0/include -LSFML-2.6.0/build/lib \
+      -lsfml-graphics -lsfml-window -lsfml-system -framework OpenGL \
+      -Wl,-rpath,SFML-2.6.0/build/lib
+    ./main

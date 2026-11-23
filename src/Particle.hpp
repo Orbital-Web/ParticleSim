@@ -22,8 +22,9 @@ private:
     sf::CircleShape sprite;
 
     // physical
-    Property prop; 
+    Property prop;
     sf::Vector2f pos, pos_i, acc;
+    sf::Vector2f acc_base;   // accélération de base (réinitialisée chaque substep)
 
 
 
@@ -35,7 +36,7 @@ public:
              const sf::Vector2f pos_in,
              const sf::Vector2f pos_i_in,
              const sf::Vector2f acc_in
-    ):  prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in) {
+    ):  prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in), acc_base(acc_in) {
         assert((prop_in.radius <= MAX_RADIUS));
         sprite.setRadius(prop_in.radius);
         sprite.setOrigin(prop_in.radius, prop_in.radius);
@@ -83,6 +84,26 @@ public:
     // returns position
     sf::Vector2f get_pos() const {
         return pos;
+    }
+
+    // returns mass
+    float get_mass() const {
+        return prop.mass;
+    }
+
+    // resets the acceleration accumulator to the base value (called each substep)
+    void reset_acc() {
+        acc = acc_base;
+    }
+
+    // adds a force (divided by mass) to the acceleration accumulator
+    void add_force(const sf::Vector2f& f) {
+        acc += f / prop.mass;
+    }
+
+    // returns an estimate of velocity from Verlet positions (v ≈ (pos - pos_i) / dt)
+    sf::Vector2f get_velocity(const float dt) const {
+        return (pos - pos_i) / dt;
     }
 
 private:

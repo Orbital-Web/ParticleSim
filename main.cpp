@@ -14,7 +14,43 @@ int main() {
     window.setFramerateLimit(fps);
     sf::Event event;
     psim::World world(width, height, fps, substeps);
-    int n_particles = 0;
+
+    // --- use case: two particles linked by a spring ---
+    // A and B start symmetric about the world center on the x-axis.
+    const float cx = width / 2.f;
+    const float cy = height / 2.f;
+    const float offset = 100.f;          // distance from center along x
+    const float weak_vel = 1.f;          // weak opposite initial velocity
+
+    // Particle A: left of center, moving right
+    world.add_particle(
+        {12.f, 1.f, 0.05f},                // radius, mass, restitution
+        sf::Color::Green,
+        {cx - offset - 100, cy},          // position
+        {weak_vel, 0.f},                  // velocity
+        {0.f, 0.f}                        // base acceleration (no gravity)
+    );
+
+    // Particle B: right of center, moving left
+    world.add_particle(
+        {12.f, 1.f, 0.05f},
+        sf::Color::Red,
+        {cx + offset, cy},
+        {-weak_vel, 0.f},
+        {0.f, 0.f}
+    );
+
+    // Link A (index 0) and B (index 1) with a spring.
+    // k = 5, rest_length = 2 * offset = 200 (initial distance)
+    world.add_spring(0, 1, 5.f, 2.f * offset);
+
+    // Add viscous drag (friction of the medium) on every particle.
+    // F = -c * v  (linear in velocity)
+    const float drag_coeff = 0.5f;
+    world.add_force_field([drag_coeff](psim::Particle& p, float dt) {
+        sf::Vector2f v = p.get_velocity(dt);
+        p.add_force(-drag_coeff * v);
+    });
 
     // until window closed
     while (window.isOpen()) {
@@ -23,20 +59,6 @@ int main() {
             // close window
             if (event.type == sf::Event::Closed)
                 window.close();
-        }
-
-        if (n_particles < psim::World::MAX_PARTICLES) {
-            float s = 4*float(n_particles % psim::World::MAX_PARTICLES) / psim::World::MAX_PARTICLES;
-            s = s - (int)s;
-            world.add_particle({float(12-std::pow(6*s-3,2)), 25-20*s, float(0.5*s+0.5)},
-                {
-                    sf::Uint8(7.6*(1.05-s)*pow(s,3)*255),
-                    sf::Uint8(15*pow(1.0-s,2)*pow(s,2)*255),
-                    sf::Uint8(7.5*pow(1.0-s,3)*(s+0.05)*255)
-                },
-                {50,50}, {120,0}, {0,1000}
-            );
-            n_particles++;
         }
 
         world.update(window);

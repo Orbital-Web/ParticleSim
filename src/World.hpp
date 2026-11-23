@@ -22,6 +22,18 @@ private:
     Partition partition;
     BS::thread_pool_light pool;
 
+    // force fields: global forces applied to every particle (e.g. gravity, drag)
+    std::vector<std::function<void(psim::Particle&, float)>> force_fields;
+
+    // springs: local forces between pairs of particles (Hooke's law)
+    struct Spring {
+        Particle* p1;
+        Particle* p2;
+        float k;
+        float rest_length;
+    };
+    std::vector<Spring> springs;
+
 
 
 // methods
@@ -54,6 +66,16 @@ public:
                       const sf::Vector2f acc) {
         sf::Vector2f pos_i = pos - vel*float(1.0/fps);
         particles.push_back(new Particle(props, color, pos, pos_i, acc));
+    }
+
+    // registers a global force field applied to every particle each substep
+    void add_force_field(std::function<void(psim::Particle&, float)> f) {
+        force_fields.push_back(f);
+    }
+
+    // links two particles (by index) with a spring (Hooke's law: F = k*(dist - rest_length))
+    void add_spring(const int i, const int j, const float k, float rest_length = 0.f) {
+        springs.push_back({particles[i], particles[j], k, rest_length});
     }
 
 
@@ -89,6 +111,31 @@ private:
                 });
             }
             pool.wait_for_tasks();
+        }
+
+        // reset acceleration accumulator for every particle (base = acc_base, typically 0)
+        for (auto& p : particles)
+            p->reset_acc();
+
+        // apply global force fields (parallelizable: each particle writes its own acc)
+        for (auto& p : particles)
+            pool.push_task([p, this, dt] {
+                for (auto& f : this->force_fields)
+                    f(*p, dt);
+            });
+        pool.wait_for_tasks();
+
+        // apply local spring forces (sequential: shared particles would race)
+        for (auto& s : springs) {
+            sf::Vector2f d = s.p2->get_pos() - s.p1->get_pos();
+            float dist = std::sqrt(d.x*d.x + d.y*d.y);
+            if (dist > 1e-6f) {
+                sf::Vector2f dir = d / dist;
+                float fmag = s.k * (dist - s.rest_length);   // Hooke: F = k*(L - L0)
+                sf::Vector2f f = fmag * dir;                  // force on p1 (toward p2 if stretched)
+                s.p1->add_force(f);
+                s.p2->add_force(-f);
+            }
         }
 
         // fix into world and apply motion
