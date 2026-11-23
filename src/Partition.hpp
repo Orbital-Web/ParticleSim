@@ -53,7 +53,7 @@ public:
     void print() {
         for (int r=0; r<n_rows; r++) {
             for (int c=0; c<n_cols; c++)
-                printf("%d ", get(r, c).size());
+                printf("%zu ", get(r, c).size());
             printf("\n");
         }
         printf("\n");
