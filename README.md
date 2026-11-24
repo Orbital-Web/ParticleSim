@@ -47,6 +47,8 @@ The space partitioning and threading is still incomplete as it is still pretty i
       -Wl,-rpath,SFML-2.6.0/build/lib
     ./main
     ```
+    
+    ```
     cd SFML-2.6.0 && mkdir -p build && cd build
     cmake .. -DSFML_STATIC_LIBRARIES=TRUE -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_C_FLAGS="-Wno-unused-command-line-argument" \
@@ -59,3 +61,4 @@ The space partitioning and threading is still incomplete as it is still pretty i
       -lsfml-graphics -lsfml-window -lsfml-system -framework OpenGL \
       -Wl,-rpath,SFML-2.6.0/build/lib
     ./main
+    ```

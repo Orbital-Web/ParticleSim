@@ -1,7 +1,6 @@
 #include "src/World.hpp"
 #include <SFML/Graphics.hpp>
-
-
+#include <cmath>
 
 int main() {
     const int width = 800;
@@ -15,44 +14,28 @@ int main() {
     sf::Event event;
     psim::World world(width, height, fps, substeps);
 
-    // --- use case: two particles linked by a spring ---
-    // A and B start symmetric about the world center on the x-axis.
+    // --- use case: test update_life with a cross pattern (birth demonstration) ---
     const float cx = width / 2.f;
     const float cy = height / 2.f;
-    const float offset = 100.f;          // distance from center along x
-    const float weak_vel = 1.f;          // weak opposite initial velocity
+    const float a = 20.f;                    // slot step = reference radius
 
-    // Particle A: left of center, moving right
-    world.add_particle(
-        {12.f, 1.f, 0.05f},                // radius, mass, restitution
-        sf::Color::Green,
-        {cx - offset - 100, cy},          // position
-        {weak_vel, 0.f},                  // velocity
-        {0.f, 0.f}                        // base acceleration (no gravity)
-    );
-
-    // Particle B: right of center, moving left
-    world.add_particle(
-        {12.f, 1.f, 0.05f},
-        sf::Color::Red,
-        {cx + offset, cy},
-        {-weak_vel, 0.f},
-        {0.f, 0.f}
-    );
-
-    // Link A (index 0) and B (index 1) with a spring.
-    // k = 5, rest_length = 2 * offset = 200 (initial distance)
-    world.add_spring(0, 1, 5.f, 2.f * offset);
+    // Create a cross pattern of 5 particles (center + 4 orthogonal neighbors)
+    // This pattern triggers births in the diagonal slots according to B3/S23 rules.
+    world.add_particle({12.f, 1.f, 0.5f}, sf::Color::Red, {cx, cy}, {0, 0}, {1, 0});       // center
+    world.add_particle({12.f, 1.f, 0.5f}, sf::Color::Red, {cx, cy - a}, {0, 0}, {1, 0});   // up
+    world.add_particle({12.f, 1.f, 0.5f}, sf::Color::Red, {cx, cy + a}, {0, 0}, {1, 0});   // down
+    world.add_particle({12.f, 1.f, 0.5f}, sf::Color::Red, {cx - a, cy}, {0, 0}, {1, 0});   // left
+    world.add_particle({12.f, 1.f, 0.5f}, sf::Color::Red, {cx + a, cy}, {0, 0}, {1, 0});   // right
 
     // Add viscous drag (friction of the medium) on every particle.
-    // F = -c * v  (linear in velocity)
-    const float drag_coeff = 0.5f;
+    const float drag_coeff = 0.3f;
     world.add_force_field([drag_coeff](psim::Particle& p, float dt) {
         sf::Vector2f v = p.get_velocity(dt);
         p.add_force(-drag_coeff * v);
     });
 
     // until window closed
+    int frame_count = 0;
     while (window.isOpen()) {
         // events
         while (window.pollEvent(event)) {
@@ -62,5 +45,18 @@ int main() {
         }
 
         world.update(window);
+
+        // every 5 frames, update links based on slot neighborhood (Rule 3)
+        frame_count++;
+        if (frame_count % 5 == 0) {
+            world.update_links(a);
+        }
+
+        // every 30 frames (1 second), evaluate life rule and trigger deaths
+        if (frame_count % 30 == 0) {
+            world.update_life(a, 0.f);
+        }
     }
 }
+
+
