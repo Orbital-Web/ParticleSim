@@ -1,126 +1,83 @@
 #pragma once
-#include <SFML/Graphics.hpp>
-#include <math.h>
+#include "Types.hpp"
 #include <cassert>
-
-
+#include <cmath>
 
 namespace psim {
+
 class Particle {
-// class variables
 public:
     static constexpr float MAX_RADIUS = 12;
+
     struct Property {
         float radius;      // (0, MAX_RADIUS]
         float mass;        // (0, inf)
         float restitution; // (0, 1]
     };
 
-private:
-    // visual
-    sf::Color color;
-    sf::CircleShape sprite;
-
-    // physical
+    // Physical + visual data. Copyable value stored in std::vector<Particle>.
     Property prop;
-    sf::Vector2f pos, pos_i, acc;
-    sf::Vector2f acc_base;   // accélération de base (réinitialisée chaque substep)
+    Rgb color;
+    Vec2 pos, pos_i, acc;
+    Vec2 acc_base; // base acceleration (reset each substep)
 
-
-
-// methods
-public:
-    // constructor
-    Particle(const Property prop_in,
-             const sf::Color color_in,
-             const sf::Vector2f pos_in,
-             const sf::Vector2f pos_i_in,
-             const sf::Vector2f acc_in
-    ):  prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in), acc_base(acc_in) {
-        assert((prop_in.radius <= MAX_RADIUS));
-        sprite.setRadius(prop_in.radius);
-        sprite.setOrigin(prop_in.radius, prop_in.radius);
-        sprite.setFillColor(color_in);
+    Particle(Property prop_in, Rgb color_in, Vec2 pos_in, Vec2 pos_i_in, Vec2 acc_in)
+        : prop(prop_in), color(color_in), pos(pos_in), pos_i(pos_i_in), acc(acc_in), acc_base(acc_in) {
+        assert(prop_in.radius <= MAX_RADIUS);
     }
 
-
-    // draws the particle on the window
-    void render(sf::RenderWindow& window) {
-        sprite.setPosition((sf::Vector2f)pos);
-        window.draw(sprite);
-    }
-
-
-    // updates the position of the particle
-    void update_physics(const float dt, const int width, const int height) {
-        sf::Vector2f pos_old = pos;
+    // Verlet integration step, then keep the particle inside the world.
+    void update_physics(float dt, int width, int height) {
+        Vec2 pos_old = pos;
         // x(n+1) = 2x(n) - x(n-1) + a*t^2
-        pos = float(2)*pos - pos_i + acc*dt*dt;
+        pos = 2.f * pos - pos_i + acc * dt * dt;
         pos_i = pos_old;
         contain(width, height);
     }
 
-
-    // updates positions so two this and other are no longer in collision
+    // Resolve an overlap between this particle and another.
     void resolve_collision(Particle& other) {
-        sf::Vector2f dir = other.pos - pos;
-        float d_sq = dir.x*dir.x + dir.y*dir.y;
+        Vec2 dir = other.pos - pos;
+        float d_sq = dir.x * dir.x + dir.y * dir.y;
         float sum_r = prop.radius + other.prop.radius;
 
-        // objects in collision
-        if (sum_r*sum_r > d_sq) {
-            float d = sqrt(d_sq);
+        if (sum_r * sum_r > d_sq) {
+            float d = std::sqrt(d_sq);
             float sum_m = prop.mass + other.prop.mass;
-            sf::Vector2f ndir = dir / (d * sum_m);
-            float d_adjust = 0.5 * prop.restitution * other.prop.restitution * (sum_r - d);
+            Vec2 ndir = dir / (d * sum_m);
+            float d_adjust = 0.5f * prop.restitution * other.prop.restitution * (sum_r - d);
 
-            // apply collision
             pos -= ndir * other.prop.mass * d_adjust;
             other.pos += ndir * prop.mass * d_adjust;
         }
     }
 
-
-    // returns position
-    sf::Vector2f get_pos() const {
-        return pos;
+    // Add a force (divided by mass) to the acceleration accumulator.
+    void add_force(const Vec2& f) {
+        acc += f / prop.mass;
     }
 
-    // returns mass
-    float get_mass() const {
-        return prop.mass;
-    }
-
-    // resets the acceleration accumulator to the base value (called each substep)
+    // Reset the acceleration accumulator to the base value (each substep).
     void reset_acc() {
         acc = acc_base;
     }
 
-    // adds a force (divided by mass) to the acceleration accumulator
-    void add_force(const sf::Vector2f& f) {
-        acc += f / prop.mass;
+    Vec2 get_pos() const {
+        return pos;
     }
 
-    // returns an estimate of velocity from Verlet positions (v ≈ (pos - pos_i) / dt)
-    sf::Vector2f get_velocity(const float dt) const {
+    // Velocity estimate from Verlet positions (v ~= (pos - pos_i) / dt).
+    Vec2 get_velocity(float dt) const {
         return (pos - pos_i) / dt;
     }
 
 private:
-    // ensures the particle stays in the world
-    void contain(const int width, const int height) {
-        // left
-        if (pos.x - prop.radius < 0)
-            pos.x = prop.radius;
-        // right
-        if (pos.x + prop.radius > width)
-            pos.x = width - prop.radius;
-        // top
-        if (pos.y - prop.radius < 0)
-            pos.y = prop.radius;
-        // bottom
-        if (pos.y + prop.radius > height)
-            pos.y = height - prop.radius;
+    void contain(int width, int height) {
+        if (pos.x - prop.radius < 0) pos.x = prop.radius;
+        if (pos.x + prop.radius > width) pos.x = width - prop.radius;
+        if (pos.y - prop.radius < 0) pos.y = prop.radius;
+        if (pos.y + prop.radius > height) pos.y = height - prop.radius;
     }
-};  // Particle
-}   // namespace psim
+};
+
+} // namespace psim
